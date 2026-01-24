@@ -1,7 +1,9 @@
 #pragma once
 
-#include <driver/i2c_master.h>
 #include <bit>
+
+#include <driver/i2c_master.h>
+#include <esp_err.h>
 
 namespace YOBA{
 	class busHAL {
@@ -191,11 +193,8 @@ namespace YOBA{
 
 				return read(buffer, length);
 			}
-			i2c_master_dev_handle_t _device {};
-
 
 		private:
-
-
+			i2c_master_dev_handle_t _device {};
 	};
 }
