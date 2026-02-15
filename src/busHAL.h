@@ -6,9 +6,9 @@
 #include <esp_err.h>
 
 namespace YOBA{
-	class busHAL {
+	class BusHAL {
 		public:
-			virtual ~busHAL() = default;
+			virtual ~BusHAL() = default;
 
 			virtual bool write(const uint8_t* buffer, size_t length) = 0;
 			virtual bool read(uint8_t* buffer, size_t length) = 0;
@@ -152,7 +152,7 @@ namespace YOBA{
 			}
 	};
 
-	class I2CBusHAL : public busHAL {
+	class I2CBusHAL : public BusHAL {
 		public:
 			bool setup(const i2c_master_bus_handle_t& bus, const uint8_t address, const uint32_t clockSpeedHz, const i2c_addr_bit_len_t addressLength = I2C_ADDR_BIT_LEN_7) {
 				i2c_device_config_t deviceConfig {};
