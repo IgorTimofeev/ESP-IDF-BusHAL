@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bit>
+#include <span>
 
 #include <driver/i2c_master.h>
 #include <esp_err.h>
@@ -10,11 +11,11 @@ namespace YOBA{
 		public:
 			virtual ~BusHAL() = default;
 
-			virtual bool write(const uint8_t* buffer, size_t length) = 0;
-			virtual bool read(uint8_t* buffer, size_t length) = 0;
+			virtual bool write(const std::span<const uint8_t> data) = 0;
+			virtual bool read(const std::span<uint8_t> data) = 0;
 
-			virtual bool read(uint8_t reg, uint8_t* buffer, size_t length) = 0;
-			virtual bool write(uint8_t reg, const uint8_t* buffer, size_t length) = 0;
+			virtual bool read(uint8_t reg, const std::span<uint8_t> data) = 0;
+			virtual bool write(uint8_t reg, const std::span<const uint8_t> data) = 0;
 
 			// 8
 			bool writeUint8(const uint8_t reg, const uint8_t value) {
@@ -23,11 +24,11 @@ namespace YOBA{
 					value
 				};
 
-				return write(buffer, 2);
+				return write({ buffer, 2 });
 			}
 
 			bool readUint8(const uint8_t reg, uint8_t& value) {
-				return read(reg, &value, 1);
+				return read(reg, { &value, 1 });
 			}
 
 			// 16 LE
@@ -94,12 +95,12 @@ namespace YOBA{
 					};
 				#pragma pack(pop)
 
-				return write(reinterpret_cast<uint8_t*>(&data), sizeof(data));
+				return write({ reinterpret_cast<uint8_t*>(&data), sizeof(data) });
 			}
 
 			template<std::unsigned_integral T>
 			bool readUintLE(const uint8_t reg, T& value) {
-				return read(reg, reinterpret_cast<uint8_t*>(&value), sizeof(T));
+				return read(reg, { reinterpret_cast<uint8_t*>(&value), sizeof(T) });
 			}
 
 			template<std::unsigned_integral UT, std::signed_integral ST>
@@ -126,7 +127,7 @@ namespace YOBA{
 					};
 				#pragma pack(pop)
 
-				return write(reinterpret_cast<uint8_t*>(&data), sizeof(data));
+				return write({ reinterpret_cast<uint8_t*>(&data), sizeof(data) });
 			}
 
 			template<std::unsigned_integral T>
@@ -166,32 +167,32 @@ namespace YOBA{
 				return state == ESP_OK;
 			}
 
-			bool write(const uint8_t* buffer, const size_t length) override {
-				const auto state = i2c_master_transmit(_device, buffer, length, -1);
+			bool write(const std::span<const uint8_t> data) override {
+				const auto state = i2c_master_transmit(_device, data.data(), data.size(), -1);
 				ESP_ERROR_CHECK_WITHOUT_ABORT(state);
 
 				return state == ESP_OK;
 			}
 
-			bool read(uint8_t* buffer, const size_t length) override {
-				const auto state = i2c_master_receive(_device, buffer, length, -1);
+			bool read(const std::span<uint8_t> data) override {
+				const auto state = i2c_master_receive(_device, data.data(), data.size(), -1);
 				ESP_ERROR_CHECK_WITHOUT_ABORT(state);
 
 				return state == ESP_OK;
 			}
 
-			bool write(const uint8_t reg, const uint8_t* buffer, const size_t length) override {
-				if (!write(&reg, 1))
+			bool write(const uint8_t reg, const std::span<const uint8_t> data) override {
+				if (!write({ &reg, 1 }))
 					return false;
 
-				return write(buffer, length);
+				return write({ data.data(), data.size() });
 			}
 
-			bool read(const uint8_t reg, uint8_t* buffer, const size_t length) override {
-				if (!write(&reg, 1))
+			bool read(const uint8_t reg, const std::span<uint8_t> data) override {
+				if (!write({ &reg, 1 }))
 					return false;
 
-				return read(buffer, length);
+				return read({ data.data(), data.size() });
 			}
 
 		private:
